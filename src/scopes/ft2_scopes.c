@@ -55,14 +55,16 @@ int32_t getSamplePositionFromScopes(uint8_t ch)
 void stopAllScopes(void)
 {
 	// wait for scopes to finish updating
-	while (scopesUpdatingFlag);
-	
+	while (scopesUpdatingFlag)
+		;
+
 	volatile scope_t *sc = scope;
 	for (int32_t i = 0; i < MAX_CHANNELS; i++, sc++)
 		sc->active = false;
 
 	// wait for scope displaying to be done (safety)
-	while (scopesDisplayingFlag);
+	while (scopesDisplayingFlag)
+		;
 }
 
 // toggle mute
@@ -143,7 +145,7 @@ static void redrawScope(int32_t ch)
 		if (i == chansPerRow) // did we reach end of row?
 		{
 			// yes, go one row down
-			x  = 2;
+			x = 2;
 			y += 39;
 		}
 
@@ -162,7 +164,7 @@ static void redrawScope(int32_t ch)
 		const uint16_t muteGfxLen = scopeMuteBMP_Widths[chanLookup];
 		const uint16_t muteGfxX = x + ((scopeLen - muteGfxLen) >> 1);
 
-		blitFastClipX(muteGfxX, y + 6, bmp.scopeMute+scopeMuteBMP_Offs[chanLookup], 162, scopeMuteBMP_Heights[chanLookup], muteGfxLen);
+		blitFastClipX(muteGfxX, y + 6, bmp.scopeMute + scopeMuteBMP_Offs[chanLookup], 162, scopeMuteBMP_Heights[chanLookup], muteGfxLen);
 
 		if (config.ptnChnNumbers)
 			drawScopeNumber(x + 1, y + 1, (uint8_t)i, true);
@@ -180,7 +182,7 @@ void refreshScopes(void)
 static void channelMode(int32_t chn)
 {
 	int32_t i;
-	
+
 	assert(chn < song.numChannels);
 
 	bool m = mouse.leftButtonPressed && !mouse.rightButtonPressed;
@@ -251,23 +253,23 @@ bool testScopesMouseDown(void)
 			return true;
 
 		int32_t chansPerRow = (uint32_t)song.numChannels >> 1;
-		const uint16_t *scopeLens = scopeLenTab[chansPerRow-1];
+		const uint16_t *scopeLens = scopeLenTab[chansPerRow - 1];
 
 		// find out if we clicked inside a scope
 		uint16_t x = 3;
 		for (i = 0; i < chansPerRow; i++)
 		{
-			if (mouse.x >= x && mouse.x < x+scopeLens[i])
+			if (mouse.x >= x && mouse.x < x + scopeLens[i])
 				break;
 
-			x += scopeLens[i]+3;
+			x += scopeLens[i] + 3;
 		}
 
 		if (i == chansPerRow)
 			return true; // scope framework was clicked instead
 
 		int32_t chanToToggle = i;
-		if (mouse.y >= 134) // second row of scopes?
+		if (mouse.y >= 134)				 // second row of scopes?
 			chanToToggle += chansPerRow; // yes, increase lookup offset
 
 		channelMode(chanToToggle);
@@ -321,7 +323,7 @@ static void scopeTrigger(int32_t ch, const sample_t *s, int32_t playOffset)
 	tempState.loopEnd = loopEnd;
 	tempState.position = playOffset;
 	tempState.positionFrac = 0;
-	
+
 	// if position overflows (f.ex. through 9xx command), shut down scopes
 	if (tempState.position >= tempState.sampleEnd)
 	{
@@ -405,7 +407,7 @@ void drawScopes(void)
 	scopesDisplayingFlag = true;
 	int32_t chansPerRow = (uint32_t)song.numChannels >> 1;
 
-	const uint16_t *scopeLens = scopeLenTab[chansPerRow-1];
+	const uint16_t *scopeLens = scopeLenTab[chansPerRow - 1];
 	uint16_t scopeXOffs = 3;
 	uint16_t scopeYOffs = 95;
 	int16_t scopeLineY = 112;
@@ -423,7 +425,7 @@ void drawScopes(void)
 		const uint16_t scopeDrawLen = scopeLens[i];
 		if (editor.channelMuted[i]) // scope muted (mute graphics blit()'ed elsewhere)
 		{
-			scopeXOffs += scopeDrawLen+3; // align x to next scope
+			scopeXOffs += scopeDrawLen + 3; // align x to next scope
 			continue;
 		}
 
@@ -467,7 +469,7 @@ void drawScopes(void)
 		if (config.multiRecChn[i])
 			blit(scopeXOffs + 1, scopeYOffs + 31, bmp.scopeRec, 13, 4);
 
-		scopeXOffs += scopeDrawLen+3; // align x to next scope
+		scopeXOffs += scopeDrawLen + 3; // align x to next scope
 	}
 
 	scopesDisplayingFlag = false;
@@ -542,12 +544,19 @@ static int32_t SDLCALL scopeThreadFunc(void *ptr)
 
 bool initScopes(void)
 {
+#ifndef __EMSCRIPTEN__
 	scopeThread = SDL_CreateThread(scopeThreadFunc, NULL, NULL);
 	if (scopeThread == NULL)
 	{
 		showErrorMsgBox("Couldn't create channel scope thread!");
 		return false;
 	}
+#else
+	// Emscripten version - no threading, scopes will be updated from main loop
+	scopeThread = NULL;
+	hpc_SetDurationInHz(&scopeHpc, SCOPE_HZ);
+	hpc_ResetCounters(&scopeHpc);
+#endif
 
 	if (!calcScopeIntrpLUT())
 	{
@@ -555,6 +564,19 @@ bool initScopes(void)
 		return false;
 	}
 
+#ifndef __EMSCRIPTEN__
 	SDL_DetachThread(scopeThread);
+#endif
 	return true;
+}
+
+void updateScopesFromMainThread(void)
+{
+#ifdef __EMSCRIPTEN__
+	// Wait for the appropriate time interval and then update scopes
+	hpc_Wait(&scopeHpc);
+	editor.scopeThreadBusy = true;
+	updateScopes();
+	editor.scopeThreadBusy = false;
+#endif
 }

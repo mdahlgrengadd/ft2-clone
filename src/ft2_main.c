@@ -75,17 +75,17 @@ int main(int argc, char *argv[])
 	if (sdlVer.major != SDL_MAJOR_VERSION || sdlVer.minor != SDL_MINOR_VERSION || sdlVer.patch != SDL_PATCHLEVEL)
 	{
 #ifdef _WIN32
-		showErrorMsgBox("SDL2.dll is not the expected version, the program will terminate.\n\n" \
-		                "Loaded dll version: %d.%d.%d\n" \
-		                "Required (compiled with) version: %d.%d.%d\n\n",
-		                sdlVer.major, sdlVer.minor, sdlVer.patch,
-		                SDL_MAJOR_VERSION, SDL_MINOR_VERSION, SDL_PATCHLEVEL);
+		showErrorMsgBox("SDL2.dll is not the expected version, the program will terminate.\n\n"
+						"Loaded dll version: %d.%d.%d\n"
+						"Required (compiled with) version: %d.%d.%d\n\n",
+						sdlVer.major, sdlVer.minor, sdlVer.patch,
+						SDL_MAJOR_VERSION, SDL_MINOR_VERSION, SDL_PATCHLEVEL);
 #else
-		showErrorMsgBox("The loaded SDL2 library is not the expected version, the program will terminate.\n\n" \
-		                "Loaded library version: %d.%d.%d\n" \
-		                "Required (compiled with) version: %d.%d.%d",
-		                sdlVer.major, sdlVer.minor, sdlVer.patch,
-		                SDL_MAJOR_VERSION, SDL_MINOR_VERSION, SDL_PATCHLEVEL);
+		showErrorMsgBox("The loaded SDL2 library is not the expected version, the program will terminate.\n\n"
+						"Loaded library version: %d.%d.%d\n"
+						"Required (compiled with) version: %d.%d.%d",
+						sdlVer.major, sdlVer.minor, sdlVer.patch,
+						SDL_MAJOR_VERSION, SDL_MINOR_VERSION, SDL_PATCHLEVEL);
 #endif
 		return 0;
 	}
@@ -103,20 +103,20 @@ int main(int argc, char *argv[])
 
 	if (!cpu.hasSSE)
 	{
-		showErrorMsgBox("Your computer's processor doesn't have the SSE instruction set\n" \
-		                "which is needed for this program to run. Sorry!");
+		showErrorMsgBox("Your computer's processor doesn't have the SSE instruction set\n"
+						"which is needed for this program to run. Sorry!");
 		return 0;
 	}
 
 	if (!cpu.hasSSE2)
 	{
-		showErrorMsgBox("Your computer's processor doesn't have the SSE2 instruction set\n" \
-		                "which is needed for this program to run. Sorry!");
+		showErrorMsgBox("Your computer's processor doesn't have the SSE2 instruction set\n"
+						"which is needed for this program to run. Sorry!");
 		return 0;
 	}
 
 	disableWasapi(); // disable problematic WASAPI SDL2 audio driver on Windows (causes clicks/pops sometimes...)
-	                 // 13.03.2020: This is still needed with SDL 2.0.12...
+					 // 13.03.2020: This is still needed with SDL 2.0.12...
 #endif
 
 	/* SDL 2.0.9 for Windows has a serious bug where you need to initialize the joystick subsystem
@@ -191,7 +191,7 @@ int main(int argc, char *argv[])
 			// nope, try safe values (44.1kHz 16-bit @ 1024 samples)
 			config.audioFreq = 44100;
 			config.specialFlags &= ~(BITDEPTH_32 + BUFFSIZE_512 + BUFFSIZE_2048);
-			config.specialFlags |=  (BITDEPTH_16 + BUFFSIZE_1024);
+			config.specialFlags |= (BITDEPTH_16 + BUFFSIZE_1024);
 
 			if (!setupAudio(CONFIG_SHOW_ERRORS)) // this time it surely must work?!
 			{
@@ -248,6 +248,9 @@ int main(int argc, char *argv[])
 		handleThreadEvents();
 		readInput();
 		handleEvents();
+#ifdef __EMSCRIPTEN__
+		updateScopesFromMainThread(); // Update scopes in main thread for web version
+#endif
 		handleRedrawing();
 		flipFrame();
 		endFPSCounter();
@@ -267,16 +270,16 @@ static void initializeVars(void)
 
 	// clear common structs
 #ifdef HAS_MIDI
-	memset(&midi, 0, sizeof (midi));
+	memset(&midi, 0, sizeof(midi));
 #endif
-	memset(&video, 0, sizeof (video));
-	memset(&keyb, 0, sizeof (keyb));
-	memset(&mouse, 0, sizeof (mouse));
-	memset(&editor, 0, sizeof (editor));
-	memset((void *)&pattMark, 0, sizeof (pattMark));
-	memset(&pattSync, 0, sizeof (pattSync));
-	memset(&chSync, 0, sizeof (chSync));
-	memset(&song, 0, sizeof (song));
+	memset(&video, 0, sizeof(video));
+	memset(&keyb, 0, sizeof(keyb));
+	memset(&mouse, 0, sizeof(mouse));
+	memset(&editor, 0, sizeof(editor));
+	memset((void *)&pattMark, 0, sizeof(pattMark));
+	memset(&pattSync, 0, sizeof(pattSync));
+	memset(&chSync, 0, sizeof(chSync));
+	memset(&song, 0, sizeof(song));
 
 	// used for scopes and sampling position line (sampler screen)
 	for (int32_t i = 0; i < MAX_CHANNELS; i++)
@@ -303,7 +306,7 @@ static void initializeVars(void)
 	editor.srcInstr = 1;
 	editor.curInstr = 1;
 	editor.curOctave = 4;
-	editor.smpEd_NoteNr = 1+NOTE_C4;
+	editor.smpEd_NoteNr = 1 + NOTE_C4;
 
 	editor.ptnJumpPos[0] = 0x00;
 	editor.ptnJumpPos[1] = 0x10;
@@ -311,8 +314,8 @@ static void initializeVars(void)
 	editor.ptnJumpPos[3] = 0x30;
 
 	editor.copyMaskEnable = true;
-	memset(editor.copyMask, 1, sizeof (editor.copyMask));
-	memset(editor.pasteMask, 1, sizeof (editor.pasteMask));
+	memset(editor.copyMask, 1, sizeof(editor.copyMask));
+	memset(editor.pasteMask, 1, sizeof(editor.pasteMask));
 
 	editor.diskOpReadOnOpen = true;
 
@@ -338,7 +341,8 @@ static void cleanUpAndExit(void) // never call this inside the main loop!
 	}
 #endif
 	midi.enable = false; // stop MIDI callback from doing things
-	while (midi.callbackBusy) SDL_Delay(1); // wait for MIDI callback to finish
+	while (midi.callbackBusy)
+		SDL_Delay(1); // wait for MIDI callback to finish
 
 	closeMidiInDevice();
 	freeMidiIn();
@@ -420,7 +424,7 @@ static void osxSetDirToProgramDirFromArgs(char **argv)
 				}
 			}
 
-			chdir(tmpPath); // path to binary
+			chdir(tmpPath);		// path to binary
 			chdir("../../../"); // we should now be in the directory where the config can be
 
 			free(tmpPath);

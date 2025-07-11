@@ -31,6 +31,7 @@ bool testScopesMouseDown(void);
 void drawScopes(void);
 void drawScopeFramework(void);
 bool initScopes(void);
+void updateScopesFromMainThread(void); // for Emscripten builds
 
 // actual scope data
 typedef struct scope_t

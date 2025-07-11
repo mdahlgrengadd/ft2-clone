@@ -53,19 +53,19 @@ enum
 
 // file extensions accepted by Disk Op. in module mode
 char *supportedModExtensions[] =
-{
-	"xm", "ft", "nst", "stk", "mod", "s3m", "stm", "fst",
-	"digi", "bem", "it",
+	{
+		"xm", "ft", "nst", "stk", "mod", "s3m", "stm", "fst",
+		"digi", "bem", "it",
 
-	// IMPORTANT: Remember comma after last entry above
-	"END_OF_LIST" // do NOT move, remove or edit this line!
+		// IMPORTANT: Remember comma after last entry above
+		"END_OF_LIST" // do NOT move, remove or edit this line!
 };
 
 // globals for module loaders
 volatile bool tmpLinearPeriodsFlag;
 int16_t patternNumRowsTmp[MAX_PATTERNS];
 note_t *patternTmp[MAX_PATTERNS];
-instr_t *instrTmp[1+256];
+instr_t *instrTmp[1 + 256];
 song_t songTmp;
 // --------------------------
 
@@ -84,8 +84,8 @@ static int8_t detectModule(FILE *f)
 	uint32_t fileLength = (uint32_t)ftell(f);
 	rewind(f);
 
-	memset(D, 0, sizeof (D));
-	fread(D, 1, sizeof (D), f);
+	memset(D, 0, sizeof(D));
+	fread(D, 1, sizeof(D), f);
 	fseek(f, 1080, SEEK_SET); // MOD ID
 	I[0] = I[1] = I[2] = I[3] = 0;
 	fread(I, 1, 4, f);
@@ -96,7 +96,7 @@ static int8_t detectModule(FILE *f)
 		return FORMAT_BEM;
 
 	// DIGI Booster (non-Pro)
-	if (!memcmp("DIGI Booster module", &D[0x00], 19+1) && D[0x19] >= 1 && D[0x19] <= 8)
+	if (!memcmp("DIGI Booster module", &D[0x00], 19 + 1) && D[0x19] >= 1 && D[0x19] <= 8)
 		return FORMAT_DIGI;
 
 	// Scream Tracker 3 S3M (and compatible trackers)
@@ -105,7 +105,8 @@ static int8_t detectModule(FILE *f)
 
 	// Scream Tracker 2 STM
 	if ((!memcmp("!Scream!", &D[0x14], 8) || !memcmp("BMOD2STM", &D[0x14], 8) ||
-		 !memcmp("WUZAMOD!", &D[0x14], 8) || !memcmp("SWavePro", &D[0x14], 8)) && D[0x1D] == 2) // XXX: byte=2 for "WUZAMOD!"/"SWavePro" ?
+		 !memcmp("WUZAMOD!", &D[0x14], 8) || !memcmp("SWavePro", &D[0x14], 8)) &&
+		D[0x1D] == 2) // XXX: byte=2 for "WUZAMOD!"/"SWavePro" ?
 	{
 		return FORMAT_STM;
 	}
@@ -125,7 +126,7 @@ static int8_t detectModule(FILE *f)
 	// Generic multi-channel MOD (10..99 channels)
 	if (isdigit(I[0]) && isdigit(I[1]) && I[0] != '0' && I[2] == 'C' && I[3] == 'N') // xxCN (same as xxCH)
 		return FORMAT_MOD;
-	
+
 	// ProTracker and generic MOD formats
 	if (!memcmp("M.K.", I, 4) || !memcmp("M!K!", I, 4) || !memcmp("NSMS", I, 4) ||
 		!memcmp("LARD", I, 4) || !memcmp("PATT", I, 4) || !memcmp("FLT4", I, 4) ||
@@ -195,17 +196,33 @@ static bool doLoadMusic(bool externalThreadFlag)
 	rewind(f);
 	switch (format)
 	{
-		case FORMAT_XM: moduleLoaded = loadXM(f, filesize); break;
-		case FORMAT_S3M: moduleLoaded = loadS3M(f, filesize); break;
-		case FORMAT_STM: moduleLoaded = loadSTM(f, filesize); break;
-		case FORMAT_MOD: moduleLoaded = loadMOD(f, filesize); break;
-		case FORMAT_POSSIBLY_STK: moduleLoaded = loadSTK(f, filesize); break;
-		case FORMAT_DIGI: moduleLoaded = loadDIGI(f, filesize); break;
-		case FORMAT_BEM: moduleLoaded = loadBEM(f, filesize); break;
-		case FORMAT_IT: moduleLoaded = loadIT(f, filesize); break;
+	case FORMAT_XM:
+		moduleLoaded = loadXM(f, filesize);
+		break;
+	case FORMAT_S3M:
+		moduleLoaded = loadS3M(f, filesize);
+		break;
+	case FORMAT_STM:
+		moduleLoaded = loadSTM(f, filesize);
+		break;
+	case FORMAT_MOD:
+		moduleLoaded = loadMOD(f, filesize);
+		break;
+	case FORMAT_POSSIBLY_STK:
+		moduleLoaded = loadSTK(f, filesize);
+		break;
+	case FORMAT_DIGI:
+		moduleLoaded = loadDIGI(f, filesize);
+		break;
+	case FORMAT_BEM:
+		moduleLoaded = loadBEM(f, filesize);
+		break;
+	case FORMAT_IT:
+		moduleLoaded = loadIT(f, filesize);
+		break;
 
-		default:
-			loaderMsgBox("This file is not a supported module!");
+	default:
+		loaderMsgBox("This file is not a supported module!");
 		break;
 	}
 	fclose(f);
@@ -224,9 +241,9 @@ loadError:
 
 static void clearTmpModule(void)
 {
-	memset(patternTmp, 0, sizeof (patternTmp));
-	memset(instrTmp, 0, sizeof (instrTmp));
-	memset(&songTmp, 0, sizeof (songTmp));
+	memset(patternTmp, 0, sizeof(patternTmp));
+	memset(instrTmp, 0, sizeof(instrTmp));
+	memset(&songTmp, 0, sizeof(songTmp));
 
 	for (uint32_t i = 0; i < MAX_PATTERNS; i++)
 		patternNumRowsTmp[i] = 64;
@@ -245,6 +262,32 @@ void loadMusic(UNICHAR *filenameU)
 
 	mouseAnimOn();
 
+#ifdef __EMSCRIPTEN__
+	// For Emscripten, loading must be synchronous since threading is not available
+	musicIsLoading = true;
+	moduleLoaded = false;
+	moduleFailedToLoad = false;
+
+	clearTmpModule(); // clear stuff from last loading session (very important)
+	UNICHAR_STRCPY(editor.tmpFilenameU, filenameU);
+
+	// Load the module synchronously
+	doLoadMusic(false);
+
+	if (moduleLoaded)
+	{
+		setupLoadedModule();
+		editor.loadMusicEvent = EVENT_NONE; // Module already processed
+	}
+	else
+	{
+		editor.loadMusicEvent = EVENT_NONE;
+	}
+
+	musicIsLoading = false;
+	mouseAnimOff(); // Turn off the busy mouse animation
+#else
+	// Original threaded implementation for desktop platforms
 	musicIsLoading = true;
 	moduleLoaded = false;
 	moduleFailedToLoad = false;
@@ -262,6 +305,7 @@ void loadMusic(UNICHAR *filenameU)
 	}
 
 	SDL_DetachThread(thread);
+#endif
 }
 
 bool loadMusicUnthreaded(UNICHAR *filenameU, bool autoPlay)
@@ -302,7 +346,7 @@ bool allocateTmpInstr(int16_t insNum)
 	if (instrTmp[insNum] != NULL)
 		return false; // already allocated
 
-	instr_t *ins = (instr_t *)calloc(1, sizeof (instr_t));
+	instr_t *ins = (instr_t *)calloc(1, sizeof(instr_t));
 	if (ins == NULL)
 		return false;
 
@@ -366,7 +410,7 @@ void clearUnusedChannels(note_t *pattPtr, int16_t numRows, int32_t numChannels)
 	if (pattPtr == NULL || numChannels >= MAX_CHANNELS)
 		return;
 
-	const int32_t width = sizeof (note_t) * (MAX_CHANNELS - numChannels);
+	const int32_t width = sizeof(note_t) * (MAX_CHANNELS - numChannels);
 
 	note_t *p = &pattPtr[numChannels];
 	for (int32_t i = 0; i < numRows; i++, p += MAX_CHANNELS)
@@ -390,7 +434,7 @@ static void setupLoadedModule(void)
 	midi.currMIDIPitch = 0;
 #endif
 
-	memset(editor.keyOnTab, 0, sizeof (editor.keyOnTab));
+	memset(editor.keyOnTab, 0, sizeof(editor.keyOnTab));
 
 	// copy over new pattern pointers and lengths
 	for (int32_t i = 0; i < MAX_PATTERNS; i++)
@@ -400,7 +444,7 @@ static void setupLoadedModule(void)
 	}
 
 	// copy over song struct
-	memcpy(&song, &songTmp, sizeof (song_t));
+	memcpy(&song, &songTmp, sizeof(song_t));
 	fixSongName();
 
 	// copy over new instruments (includes sample pointers)
@@ -545,14 +589,14 @@ bool handleModuleLoadFromArg(int argc, char **argv)
 
 	const uint32_t filenameLen = (const uint32_t)strlen(argv[1]);
 
-	UNICHAR *tmpPathU = (UNICHAR *)malloc((PATH_MAX + 1) * sizeof (UNICHAR));
+	UNICHAR *tmpPathU = (UNICHAR *)malloc((PATH_MAX + 1) * sizeof(UNICHAR));
 	if (tmpPathU == NULL)
 	{
 		okBox(0, "System message", "Not enough memory!", NULL);
 		return false;
 	}
 
-	UNICHAR *filenameU = (UNICHAR *)malloc((filenameLen + 1) * sizeof (UNICHAR));
+	UNICHAR *filenameU = (UNICHAR *)malloc((filenameLen + 1) * sizeof(UNICHAR));
 	if (filenameU == NULL)
 	{
 		free(tmpPathU);
@@ -564,7 +608,7 @@ bool handleModuleLoadFromArg(int argc, char **argv)
 	filenameU[0] = 0;
 
 #ifdef _WIN32
-	MultiByteToWideChar(CP_UTF8, 0, argv[1], -1, filenameU, filenameLen+1);
+	MultiByteToWideChar(CP_UTF8, 0, argv[1], -1, filenameU, filenameLen + 1);
 #else
 	strcpy(filenameU, argv[1]);
 #endif
@@ -576,7 +620,7 @@ bool handleModuleLoadFromArg(int argc, char **argv)
 	UNICHAR_CHDIR(editor.binaryPathU);
 
 	const int32_t filesize = getFileSize(filenameU);
-	if (filesize == -1 || filesize >= 512L*1024*1024) // 1) >=2GB   2) >=512MB
+	if (filesize == -1 || filesize >= 512L * 1024 * 1024) // 1) >=2GB   2) >=512MB
 	{
 		free(filenameU);
 		UNICHAR_CHDIR(tmpPathU); // set old path back
@@ -639,7 +683,7 @@ static bool fileIsModule(UNICHAR *pathU)
 				return true;
 			}
 
-			if (!_strnicmp(".mod", &filename[filenameLen-4], 4) || !_strnicmp(".stk", &filename[filenameLen-4], 4))
+			if (!_strnicmp(".mod", &filename[filenameLen - 4], 4) || !_strnicmp(".stk", &filename[filenameLen - 4], 4))
 			{
 				free(path);
 				return true;
@@ -662,7 +706,7 @@ void loadDroppedFile(char *fullPathUTF8, bool songModifiedCheck)
 	if (fullPathLen == 0)
 		return;
 
-	UNICHAR *fullPathU = (UNICHAR *)malloc((fullPathLen + 1) * sizeof (UNICHAR));
+	UNICHAR *fullPathU = (UNICHAR *)malloc((fullPathLen + 1) * sizeof(UNICHAR));
 	if (fullPathU == NULL)
 	{
 		okBox(0, "System message", "Not enough memory!", NULL);
@@ -672,7 +716,7 @@ void loadDroppedFile(char *fullPathUTF8, bool songModifiedCheck)
 	fullPathU[0] = 0;
 
 #ifdef _WIN32
-	MultiByteToWideChar(CP_UTF8, 0, fullPathUTF8, -1, fullPathU, fullPathLen+1);
+	MultiByteToWideChar(CP_UTF8, 0, fullPathUTF8, -1, fullPathU, fullPathLen + 1);
 #else
 	strcpy(fullPathU, fullPathUTF8);
 #endif
@@ -686,7 +730,7 @@ void loadDroppedFile(char *fullPathUTF8, bool songModifiedCheck)
 		return;
 	}
 
-	if (filesize >= 128L*1024*1024) // 128MB
+	if (filesize >= 128L * 1024 * 1024) // 128MB
 	{
 		if (okBox(2, "System request", "Are you sure you want to load such a big file?", NULL) != 1)
 		{
@@ -757,34 +801,35 @@ void handleLoadMusicEvents(void)
 
 		switch (editor.loadMusicEvent)
 		{
-			// module dragged and dropped *OR* user double clicked a file associated with FT2 clone
-			case EVENT_LOADMUSIC_DRAGNDROP:
-			{
-				setupLoadedModule();
-				if (editor.autoPlayOnDrop)
-					startPlaying(PLAYMODE_SONG, 0);
-				else
-					handleOldPlayMode();
-			}
-			break;
-
-			// filename passed as an exe argument *OR* user double clicked a file associated with FT2 clone
-			case EVENT_LOADMUSIC_ARGV:
-			{
-				setupLoadedModule();
+		// module dragged and dropped *OR* user double clicked a file associated with FT2 clone
+		case EVENT_LOADMUSIC_DRAGNDROP:
+		{
+			setupLoadedModule();
+			if (editor.autoPlayOnDrop)
 				startPlaying(PLAYMODE_SONG, 0);
-			}
-			break;
-
-			// module filename pressed in Disk Op.
-			case EVENT_LOADMUSIC_DISKOP:
-			{
-				setupLoadedModule();
+			else
 				handleOldPlayMode();
-			}
-			break;
+		}
+		break;
 
-			default: break;
+		// filename passed as an exe argument *OR* user double clicked a file associated with FT2 clone
+		case EVENT_LOADMUSIC_ARGV:
+		{
+			setupLoadedModule();
+			startPlaying(PLAYMODE_SONG, 0);
+		}
+		break;
+
+		// module filename pressed in Disk Op.
+		case EVENT_LOADMUSIC_DISKOP:
+		{
+			setupLoadedModule();
+			handleOldPlayMode();
+		}
+		break;
+
+		default:
+			break;
 		}
 
 		moduleLoaded = false;
