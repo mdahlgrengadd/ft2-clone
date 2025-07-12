@@ -8,12 +8,35 @@
         html,body{height:100%;margin:0;background:#000;display:flex;align-items:center;justify-content:center}
         /* ensure pixel-perfect upscaling */
         #canvas{image-rendering:pixelated;image-rendering:-moz-crisp-edges;image-rendering:crisp-edges}
+        /* prevent scroll behavior that triggers passive event warnings */
+        html,body{overflow:hidden;touch-action:none}
+        #canvas{touch-action:none}
     </style>
 </head>
 <body>
     <canvas id="canvas" width="632" height="400"></canvas>
 
     <script>
+        // Patch addEventListener to use passive listeners for scroll-blocking events
+        // This reduces browser warnings about non-passive event listeners
+        (function() {
+            const originalAddEventListener = EventTarget.prototype.addEventListener;
+            const passiveEvents = ['touchstart', 'touchmove', 'wheel', 'mousewheel'];
+            
+            EventTarget.prototype.addEventListener = function(type, listener, options) {
+                if (passiveEvents.includes(type)) {
+                    if (typeof options === 'boolean') {
+                        options = { capture: options, passive: true };
+                    } else if (typeof options === 'object' && options !== null) {
+                        options = { ...options, passive: true };
+                    } else {
+                        options = { passive: true };
+                    }
+                }
+                return originalAddEventListener.call(this, type, listener, options);
+            };
+        })();
+        
         /* minimal Module definition for the Emscripten runtime + FT2 mouse fixes */
         const canvas = document.getElementById('canvas');
         
@@ -81,14 +104,31 @@
                     persistentStorageReady = true;
                     console.log('Persistent storage initialization complete - starting main application');
                     
-                    // Now call the main function
+                    // Now call the main function - try multiple approaches
                     try {
-                        Module.callMain();
+                        // Modern Emscripten approach
+                        if (typeof Module.callMain === 'function') {
+                            Module.callMain();
+                        } else if (typeof Module._main === 'function') {
+                            // Direct main function call
+                            Module._main();
+                        } else if (typeof Module.ccall === 'function') {
+                            // Use ccall to invoke main
+                            Module.ccall('main', 'number', [], []);
+                        } else {
+                            console.error('No suitable main function found');
+                        }
                     } catch(e) {
                         console.log('Error calling main:', e);
-                        // Fallback to direct call
-                        if (Module._main) {
-                            Module._main();
+                        // Final fallback - try to find and call main directly
+                        try {
+                            if (Module._main) {
+                                Module._main();
+                            } else if (Module.asm && Module.asm._main) {
+                                Module.asm._main();
+                            }
+                        } catch(e2) {
+                            console.error('All main function calls failed:', e2);
                         }
                     }
                 });
@@ -98,12 +138,19 @@
                 // Mark as ready even on error so app can start
                 persistentStorageReady = true;
                 
-                // Still try to start the app
+                // Still try to start the app with same fallback logic
                 try {
-                    Module.callMain();
-                } catch(e2) {
-                    if (Module._main) {
+                    if (typeof Module.callMain === 'function') {
+                        Module.callMain();
+                    } else if (typeof Module._main === 'function') {
                         Module._main();
+                    } else if (typeof Module.ccall === 'function') {
+                        Module.ccall('main', 'number', [], []);
+                    }
+                } catch(e2) {
+                    console.error('Failed to start app after storage error:', e2);
+                    if (Module._main) {
+                        try { Module._main(); } catch(e3) { console.error('Final fallback failed:', e3); }
                     }
                 }
             }
