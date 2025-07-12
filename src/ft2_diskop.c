@@ -2667,6 +2667,14 @@ void pbDiskOpRefresh(void)
 #endif
 }
 
+#ifdef __EMSCRIPTEN__
+// JavaScript-accessible function to refresh the module directory
+EMSCRIPTEN_KEEPALIVE void refreshModuleDirectory(void)
+{
+	pbDiskOpRefresh();
+}
+#endif
+
 void pbDiskOpSetPath(void)
 {
 	FReq_NameTemp[0] = '\0';
