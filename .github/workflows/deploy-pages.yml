@@ -41,6 +41,14 @@ jobs:
     - name: Create build directory
       run: mkdir -p build_emscripten
       
+    - name: Create web directory structure
+      run: |
+        mkdir -p web/web_user
+        mkdir -p web/web_user/modules
+        mkdir -p web/web_user/samples
+        mkdir -p web/web_user/instruments
+        mkdir -p web/assets
+        
     - name: Configure CMake with Emscripten
       working-directory: build_emscripten
       run: |

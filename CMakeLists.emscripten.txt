@@ -67,7 +67,7 @@ set(EMSCRIPTEN_LINK_FLAGS
     -sASYNCIFY=1
     -sASYNCIFY_STACK_SIZE=65536
     -sEXPORTED_RUNTIME_METHODS=["ccall","cwrap","FS"]
-    -sEXPORTED_FUNCTIONS=["_main","_malloc","_free"]
+    -sEXPORTED_FUNCTIONS=["_main","_malloc","_free","_refreshModuleDirectory"]
     -sFORCE_FILESYSTEM=1
     -sLLD_REPORT_UNDEFINED=1
     -sERROR_ON_UNDEFINED_SYMBOLS=1

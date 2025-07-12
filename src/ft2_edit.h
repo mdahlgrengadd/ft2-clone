@@ -1,7 +1,11 @@
 #pragma once
 
 #include <stdint.h>
+#ifdef __EMSCRIPTEN__
+#include <SDL.h>
+#else
 #include <SDL2/SDL.h>
+#endif
 
 bool handleEditKeys(SDL_Keycode keycode, SDL_Scancode scancode);
 void recordNote(uint8_t noteNum, int8_t vol);

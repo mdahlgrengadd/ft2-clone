@@ -2,7 +2,11 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#ifdef __EMSCRIPTEN__
+#include <SDL.h>
+#else
 #include <SDL2/SDL.h>
+#endif
 
 enum // TEXTBOXES
 {

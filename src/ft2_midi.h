@@ -4,7 +4,11 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#ifdef __EMSCRIPTEN__
+#include <SDL.h>
+#else
 #include <SDL2/SDL.h>
+#endif
 
 #define MIDI_INPUT_SELECTOR_BOX_WIDTH 247
 #define MAX_MIDI_DEVICES 99
