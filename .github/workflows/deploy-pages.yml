@@ -1,0 +1,216 @@
+name: Build and Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+# Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Allow only one concurrent deployment, skipping runs queued between the run in-progress and latest queued.
+# However, do NOT cancel in-progress runs as we want to allow these production deployments to complete.
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Setup Emscripten SDK
+      uses: mymindstorm/setup-emsdk@v14
+      with:
+        version: '3.1.45'
+        actions-cache-folder: 'emsdk-cache'
+        
+    - name: Verify Emscripten installation
+      run: |
+        emcc --version
+        which emcc
+        
+    - name: Create build directory
+      run: mkdir -p build_emscripten
+      
+    - name: Configure CMake with Emscripten
+      working-directory: build_emscripten
+      run: |
+        emcmake cmake -DCMAKE_BUILD_TYPE=Release -f ../CMakeLists.emscripten.txt ..
+        
+    - name: Build FastTracker II Clone
+      working-directory: build_emscripten
+      run: |
+        emmake make -j$(nproc)
+        
+    - name: Verify build output
+      run: |
+        echo "Checking build outputs..."
+        ls -la build_emscripten/web/
+        
+    - name: Create GitHub Pages structure
+      run: |
+        # Create pages directory
+        mkdir -p pages
+        
+        # Copy built web files
+        cp -r build_emscripten/web/* pages/
+        
+        # Copy additional web assets if they exist
+        if [ -d "web/assets" ]; then
+          cp -r web/assets pages/
+        fi
+        
+        # Create index.html that redirects to ft2-clone.html
+        cat > pages/index.html << 'EOF'
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <meta http-equiv="refresh" content="0; url=ft2-clone.html">
+            <title>FastTracker II Clone</title>
+            <style>
+                body {
+                    margin: 0;
+                    padding: 20px;
+                    font-family: Arial, sans-serif;
+                    background: #000;
+                    color: #fff;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    justify-content: center;
+                    min-height: 100vh;
+                }
+                .container {
+                    text-align: center;
+                    max-width: 600px;
+                }
+                .logo {
+                    font-size: 2.5em;
+                    margin-bottom: 20px;
+                    color: #4CAF50;
+                }
+                .subtitle {
+                    font-size: 1.2em;
+                    margin-bottom: 30px;
+                    color: #ccc;
+                }
+                .loading {
+                    font-size: 1em;
+                    color: #888;
+                }
+                a {
+                    color: #4CAF50;
+                    text-decoration: none;
+                }
+                a:hover {
+                    text-decoration: underline;
+                }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="logo">🎵 FastTracker II Clone</div>
+                <div class="subtitle">Web version powered by Emscripten</div>
+                <div class="loading">Loading... If not redirected automatically, <a href="ft2-clone.html">click here</a></div>
+            </div>
+            <script>
+                // Fallback redirect after 3 seconds
+                setTimeout(function() {
+                    if (window.location.pathname.endsWith('index.html') || window.location.pathname.endsWith('/')) {
+                        window.location.href = 'ft2-clone.html';
+                    }
+                }, 3000);
+            </script>
+        </body>
+        </html>
+        EOF
+        
+        # Create a README for the pages
+        cat > pages/README.md << 'EOF'
+        # FastTracker II Clone - Web Version
+        
+        This is the web version of FastTracker II Clone, built with Emscripten and deployed automatically via GitHub Actions.
+        
+        ## Features
+        - Full FastTracker II compatibility
+        - Persistent storage using IndexedDB
+        - Drag & drop module file upload
+        - "Why Colors?" theme by default
+        - Supports XM, MOD, S3M, IT and other tracker formats
+        
+        ## Usage
+        - Click to start the application
+        - Drag and drop .xm, .mod, .s3m files onto the interface to load them
+        - Your settings and uploaded files are automatically saved
+        
+        ## Technical Details
+        - Built with Emscripten WebAssembly
+        - Uses IDBFS for persistent browser storage
+        - Supports all major tracker file formats
+        - Optimized for modern web browsers
+        EOF
+        
+        echo "Pages structure created:"
+        ls -la pages/
+        
+    - name: Upload Pages artifact
+      uses: actions/upload-pages-artifact@v3
+      with:
+        path: ./pages
+
+  deploy:
+    # Only deploy on pushes to main/master branch
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+    
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    
+    steps:
+    - name: Deploy to GitHub Pages
+      id: deployment
+      uses: actions/deploy-pages@v4
+
+  build-info:
+    runs-on: ubuntu-latest
+    needs: build
+    if: always()
+    
+    steps:
+    - name: Build Summary
+      run: |
+        echo "## FastTracker II Clone Build Summary" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "✅ **Build Status:** ${{ needs.build.result }}" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        if [ "${{ needs.build.result }}" == "success" ]; then
+          echo "🎉 **Build successful!** The web version has been created." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Features Included:" >> $GITHUB_STEP_SUMMARY
+          echo "- 🎵 Full FastTracker II Clone functionality" >> $GITHUB_STEP_SUMMARY
+          echo "- 💾 Persistent storage with IDBFS" >> $GITHUB_STEP_SUMMARY
+          echo "- 🎨 Default 'Why Colors?' theme" >> $GITHUB_STEP_SUMMARY
+          echo "- 📁 Drag & drop module file upload" >> $GITHUB_STEP_SUMMARY
+          echo "- 🔄 Automatic directory refresh" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ github.event_name }}" == "push" ] && ([ "${{ github.ref }}" == "refs/heads/main" ] || [ "${{ github.ref }}" == "refs/heads/master" ]); then
+            echo "🚀 **Deployment:** Will be deployed to GitHub Pages" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "ℹ️ **Deployment:** Build-only (not deploying - not on main/master branch)" >> $GITHUB_STEP_SUMMARY
+          fi
+        else
+          echo "❌ **Build failed!** Check the build logs for details." >> $GITHUB_STEP_SUMMARY
+        fi

@@ -409,14 +409,14 @@ bool setupDiskOp(void)
 	EM_ASM(
 		try {
 			FS.mkdir('/home');
-		} catch (e){
+		} catch(e){
 			// /home already exists
 		});
 
 	EM_ASM(
 		try {
 			FS.mkdir('/home/web_user');
-		} catch (e){
+		} catch(e){
 			// /home/web_user already exists
 		});
 
@@ -455,8 +455,7 @@ void syncPersistentStorage(bool load)
 			} else {
 				console.log('Persistent storage sync completed successfully');
 			}
-		});
-	}, load);
+		}); }, load);
 }
 #endif
 
