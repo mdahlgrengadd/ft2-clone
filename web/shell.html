@@ -15,25 +15,130 @@
 
     <script>
         /* minimal Module definition for the Emscripten runtime + FT2 mouse fixes */
-        const canvas   = document.getElementById('canvas');
-        var Module   = {
+        const canvas = document.getElementById('canvas');
+        var Module = {
             canvas: canvas,
             lastMouseEvent: null,
-            /* stubs so the runtime doesn’t complain */
+            /* stubs so the runtime doesn't complain */
             setStatus:            function() {},
             monitorRunDependencies:function() {},
             print:               function(t){console.log(t)},
             printErr:            function(t){console.error(t)},
-            postRun:             []
+            postRun:             [],
+            
+            /* Persistent storage initialization */
+            preRun: [function() {
+                console.log('Initializing persistent storage...');
+                
+                // Wait for FS to be available
+                if (typeof FS === 'undefined') {
+                    console.log('FS not yet available, will initialize in postRun...');
+                    return;
+                }
+                
+                try {
+                    // Create persistent directories
+                    FS.mkdir('/persistent');
+                    FS.mkdir('/persistent/modules');
+                    FS.mkdir('/persistent/samples');
+                    FS.mkdir('/persistent/instruments');
+                    FS.mkdir('/persistent/config');
+                    
+                    // Mount IDBFS for persistent storage
+                    FS.mount(IDBFS, {}, '/persistent');
+                    
+                    // Create a symbolic link from /home/web_user to /persistent for compatibility
+                    try {
+                        FS.mkdir('/home');
+                        FS.symlink('/persistent', '/home/web_user');
+                        console.log('Created /home/web_user symlink to /persistent');
+                    } catch(e) {
+                        console.log('Note: /home/web_user symlink creation failed (may already exist)');
+                    }
+                    
+                    console.log('Persistent storage directories created, sync will happen during postRun');
+                } catch(e) {
+                    console.error('Error initializing persistent storage:', e);
+                }
+            }],
+            
+            /* Initialize storage after everything is loaded */
+            postRun: [function() {
+                console.log('FastTracker II Clone initialized');
+                
+                // Initialize persistent storage if not done in preRun
+                setTimeout(function() {
+                    if (typeof FS !== 'undefined' && FS.mount) {
+                        try {
+                            // Check if already mounted
+                            if (!FS.analyzePath('/persistent').exists) {
+                                FS.mkdir('/persistent');
+                                FS.mkdir('/persistent/modules');
+                                FS.mkdir('/persistent/samples');
+                                FS.mkdir('/persistent/instruments');
+                                FS.mkdir('/persistent/config');
+                                FS.mount(IDBFS, {}, '/persistent');
+                                
+                                try {
+                                    FS.mkdir('/home');
+                                    FS.symlink('/persistent', '/home/web_user');
+                                } catch(e) {
+                                    console.log('Symlink already exists or failed');
+                                }
+                            }
+                            
+                            // Load persistent data
+                            FS.syncfs(true, function(err) {
+                                if (!err) {
+                                    console.log('Persistent storage initialized in postRun');
+                                }
+                            });
+                        } catch(e) {
+                            console.log('Storage already initialized or error:', e.message);
+                        }
+                    }
+                }, 500);
+            }]
         };
 
         /* feed mouse events to C code (see ft2_mouse.c EM_ASM blocks) */
-        function storeEvt(e){ Module.lastMouseEvent = e; }
-        ['mousemove','mousedown','mouseup','click'].forEach(evt=>canvas.addEventListener(evt,storeEvt));
-        document.addEventListener('mousemove',storeEvt); // when pointer leaves canvas
-        canvas.addEventListener('click',()=>canvas.focus());
+        function storeEvt(e){ 
+            if (Module) Module.lastMouseEvent = e; 
+        }
+        
+        // Safely add event listeners
+        if (canvas) {
+            ['mousemove','mousedown','mouseup','click'].forEach(evt => {
+                canvas.addEventListener(evt, storeEvt);
+            });
+            canvas.addEventListener('click', () => canvas.focus());
+        }
+        
+        document.addEventListener('mousemove', storeEvt); // when pointer leaves canvas
+        
+        /* Periodic sync to save data every 30 seconds */
+        setInterval(function() {
+            if (typeof FS !== 'undefined' && FS.syncfs) {
+                FS.syncfs(false, function(err) {
+                    if (err) {
+                        console.log('Periodic save error:', err);
+                    } else {
+                        console.log('Periodic save completed');
+                    }
+                });
+            }
+        }, 30000);
+        
+        /* Save on page unload */
+        window.addEventListener('beforeunload', function() {
+            if (typeof FS !== 'undefined' && FS.syncfs) {
+                FS.syncfs(false, function(err) {
+                    console.log('Saving on page unload...');
+                });
+            }
+        });
     </script>
 
     {{{ SCRIPT }}}
 </body>
-</html> 
+</html>

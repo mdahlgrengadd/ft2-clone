@@ -71,9 +71,11 @@ set(EMSCRIPTEN_LINK_FLAGS
     -sFORCE_FILESYSTEM=1
     -sLLD_REPORT_UNDEFINED=1
     -sERROR_ON_UNDEFINED_SYMBOLS=1
+    -lidbfs.js
     --embed-file "${CMAKE_CURRENT_SOURCE_DIR}/src/gfxdata/bmp@/"
     --shell-file "${CMAKE_CURRENT_SOURCE_DIR}/web/shell.html"
     --preload-file "${CMAKE_CURRENT_SOURCE_DIR}/web/assets@/assets"
+    --preload-file "${CMAKE_CURRENT_SOURCE_DIR}/web/web_user@/home/web_user"
 )
 
 # Convert list to string for linker

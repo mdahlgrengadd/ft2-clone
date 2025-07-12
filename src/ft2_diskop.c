@@ -442,6 +442,24 @@ bool setupDiskOp(void)
 	return true;
 }
 
+#ifdef __EMSCRIPTEN__
+void syncPersistentStorage(bool load)
+{
+	EM_ASM_ARGS({
+		var loadFromStorage = !!$0;
+		console.log(loadFromStorage ? 'Loading from persistent storage...' : 'Saving to persistent storage...');
+		
+		FS.syncfs(loadFromStorage, function(err) {
+			if (err) {
+				console.error('Persistent storage sync error:', err);
+			} else {
+				console.log('Persistent storage sync completed successfully');
+			}
+		});
+	}, load);
+}
+#endif
+
 int32_t getExtOffset(char *s, int32_t stringLen) // get byte offset of file extension (last '.')
 {
 	if (s == NULL || stringLen < 1)

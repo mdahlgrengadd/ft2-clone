@@ -155,6 +155,11 @@ static bool saveRawSample(UNICHAR *filenameU, bool saveRangedData)
 
 	fclose(f);
 
+#ifdef __EMSCRIPTEN__
+	// Sync to persistent storage after successful save
+	syncPersistentStorage(false);
+#endif
+
 	// restore modified interpolation tap samples after loopEnd
 	bool loopEnabled = GET_LOOPTYPE(smp->flags) != LOOP_OFF;
 	if (loopEnabled && smp->length > smp->loopStart+smp->loopLength)
@@ -306,6 +311,11 @@ static bool saveIFFSample(UNICHAR *filenameU, bool saveRangedData)
 	iffWriteUint32(f, chunkLen);
 
 	fclose(f);
+
+#ifdef __EMSCRIPTEN__
+	// Sync to persistent storage after successful save
+	syncPersistentStorage(false);
+#endif
 
 	// restore modified interpolation tap samples after loopEnd
 	bool loopEnabled = GET_LOOPTYPE(smp->flags) != LOOP_OFF;
@@ -486,6 +496,11 @@ static bool saveWAVSample(UNICHAR *filenameU, bool saveRangedData)
 	fwrite(&riffChunkSize, sizeof (int32_t), 1, f);
 
 	fclose(f);
+
+#ifdef __EMSCRIPTEN__
+	// Sync to persistent storage after successful save
+	syncPersistentStorage(false);
+#endif
 
 	// restore modified interpolation tap samples after loopEnd
 	bool loopEnabled = GET_LOOPTYPE(smp->flags) != LOOP_OFF;

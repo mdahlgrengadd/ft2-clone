@@ -28,6 +28,7 @@
 #include "ft2_audioselector.h"
 #include "ft2_midi.h"
 #include "ft2_palette.h"
+#include "ft2_diskop.h"
 #include "ft2_pattern_draw.h"
 #include "ft2_tables.h"
 #include "ft2_bmp.h"
@@ -429,6 +430,12 @@ bool saveConfig(bool showErrorFlag)
 	}
 
 	fclose(f);
+
+#ifdef __EMSCRIPTEN__
+	// Sync to persistent storage after successful config save
+	syncPersistentStorage(false);
+#endif
+
 	return true;
 }
 
@@ -620,6 +627,22 @@ static void setConfigFileLocation(void) // kinda hackish
 
 	// Linux etc
 #else
+#ifdef __EMSCRIPTEN__
+	// Emscripten - use persistent storage directory
+	int32_t ft2DotCfgStrLen = (int32_t)UNICHAR_STRLEN("FT2.CFG");
+
+	editor.configFileLocationU = (UNICHAR *)malloc((PATH_MAX + ft2DotCfgStrLen + 1) * sizeof (UNICHAR));
+	if (editor.configFileLocationU == NULL)
+	{
+		showErrorMsgBox("Error: Couldn't set config file location. You can't load/save the config!");
+		return;
+	}
+
+	// Use persistent storage directory for config
+	strcpy(editor.configFileLocationU, "/persistent");
+	strcat(editor.configFileLocationU, "/FT2.CFG");
+#else
+	// Regular Unix/Linux
 	int32_t ft2DotCfgStrLen = (int32_t)UNICHAR_STRLEN("FT2.CFG");
 
 	editor.configFileLocationU = (UNICHAR *)malloc((PATH_MAX + ft2DotCfgStrLen + 1) * sizeof (UNICHAR));
@@ -672,6 +695,7 @@ static void setConfigFileLocation(void) // kinda hackish
 	}
 
 	strcat(editor.configFileLocationU, "/FT2.CFG");
+#endif
 #endif
 
 #ifdef HAS_MIDI

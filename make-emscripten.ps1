@@ -26,6 +26,13 @@ Write-Host "Creating build directory..." -ForegroundColor Green
 New-Item -ItemType Directory -Path $buildDir | Out-Null
 New-Item -ItemType Directory -Path "$buildDir\web" | Out-Null
 
+# Create web_user directory structure if it doesn't exist
+if (-not (Test-Path "web\web_user")) {
+    Write-Host "Creating web_user directory structure..." -ForegroundColor Yellow
+    New-Item -ItemType Directory -Path "web\web_user" -Force | Out-Null
+    New-Item -ItemType Directory -Path "web\web_user\modules" -Force | Out-Null
+}
+
 # Define source files
 $sourceFiles = @(
     "src/*.c"
@@ -99,6 +106,7 @@ $arguments += "-sASYNCIFY_STACK_SIZE=65536"
 $arguments += "-sEXPORTED_RUNTIME_METHODS=ccall,cwrap,FS"
 $arguments += "-sEXPORTED_FUNCTIONS=_main,_malloc,_free"
 $arguments += "-sFORCE_FILESYSTEM=1"
+$arguments += "-lidbfs.js"
 $arguments += "--embed-file"
 $arguments += "src/gfxdata/bmp@/"
 $arguments += "--shell-file"
@@ -110,9 +118,11 @@ Write-Host "Running emcc with $($arguments.Count) arguments..." -ForegroundColor
 
 # Preload files into the virtual file system
 $preloadFiles = @()
-if (Test-Path "web/db_cydon.xm") {
-    $preloadFiles += "--preload-file", "web/db_cydon.xm@db_cydon.xm"
-    Write-Host "Preloading module: web/db_cydon.xm"
+
+# Preload the web_user directory to /home/web_user in the VFS
+if (Test-Path "web/web_user") {
+    $preloadFiles += "--preload-file", "web/web_user@/home/web_user"
+    Write-Host "Preloading web_user directory to /home/web_user in VFS" -ForegroundColor Cyan
 }
 
 # Add any other files you want to preload here

@@ -45,6 +45,12 @@ if [ -d "../web/assets" ]; then
     cp -r ../web/assets/* web/assets/ 2>/dev/null || true
 fi
 
+# Copy web_user directory for VFS mapping
+if [ -d "../web/web_user" ]; then
+    echo -e "${GREEN}Copying web_user directory for VFS mapping...${NC}"
+    cp -r ../web/web_user ./web/ 2>/dev/null || true
+fi
+
 # Run CMake with Emscripten
 echo -e "${GREEN}Running CMake configuration...${NC}"
 emcmake cmake -DCMAKE_BUILD_TYPE=Release -f ../CMakeLists.emscripten.txt ..

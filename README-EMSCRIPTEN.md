@@ -97,12 +97,24 @@ emmake make -j4
 
 ## File Management
 
-The web version uses Emscripten's virtual filesystem:
+The web version uses Emscripten's virtual filesystem with **persistent storage**:
 
-- Use the "Load Module" button to load music files
-- Files are temporarily stored in the browser's memory
-- No permanent file storage (files are lost when page is reloaded)
-- Supported formats: .xm, .mod, .s3m, .it, .stm, .smp, .wav, .flac, .aiff
+- **Persistent Storage**: Files saved to `/home/web_user` are automatically stored in the browser's IndexedDB and persist between sessions
+- **Auto-Save**: Files are automatically synced to persistent storage every 30 seconds and when the page is closed
+- **File Access**: Use the "Load Module" button to load music files, or access files from `/home/web_user/modules`
+- **Directory Structure**:
+  - `/home/web_user/modules/` - Music modules (.xm, .mod, .s3m, etc.)
+  - `/home/web_user/samples/` - Sample files (.wav, .flac, .aiff)
+  - `/home/web_user/instruments/` - Instrument files
+  - `/home/web_user/config/` - Configuration files
+- **Storage Limits**: Subject to browser storage quotas (typically several hundred MB)
+- **Data Persistence**: Files remain available across browser sessions and page reloads
+
+### Supported File Formats
+
+- Music modules: .xm, .mod, .s3m, .it, .stm
+- Samples: .wav, .flac, .aiff, .smp
+- All files saved from within the application are automatically persisted
 
 ## Troubleshooting
 
@@ -133,6 +145,12 @@ The web version uses Emscripten's virtual filesystem:
 3. **Files won't load**
    - Use the "Load Module" button, don't drag files directly
    - Check that file format is supported
+
+4. **Clear persistent storage** (if experiencing issues)
+   - Open browser developer tools (F12)
+   - Go to Application/Storage tab
+   - Clear IndexedDB for the site
+   - Or use: `localStorage.clear(); indexedDB.deleteDatabase('/');`
 
 ## Browser Compatibility
 
