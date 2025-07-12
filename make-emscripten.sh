@@ -53,7 +53,9 @@ fi
 
 # Run CMake with Emscripten
 echo -e "${GREEN}Running CMake configuration...${NC}"
-emcmake cmake -DCMAKE_BUILD_TYPE=Release -f ../CMakeLists.emscripten.txt ..
+# Copy Emscripten-specific CMakeLists.txt
+cp ../CMakeLists.emscripten.txt ../CMakeLists.txt
+emcmake cmake -DCMAKE_BUILD_TYPE=Release ..
 
 # Build the project
 echo -e "${GREEN}Building the project...${NC}"

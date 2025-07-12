@@ -42,7 +42,9 @@ if exist "..\web\assets" (
 
 REM Run CMake with Emscripten
 echo Running CMake configuration...
-emcmake cmake -DCMAKE_BUILD_TYPE=Release -f ..\CMakeLists.emscripten.txt ..
+REM Copy Emscripten-specific CMakeLists.txt
+copy ..\CMakeLists.emscripten.txt ..\CMakeLists.txt >nul
+emcmake cmake -DCMAKE_BUILD_TYPE=Release ..
 if %errorlevel% neq 0 (
     echo CMake configuration failed!
     pause

@@ -44,7 +44,9 @@ jobs:
     - name: Configure CMake with Emscripten
       working-directory: build_emscripten
       run: |
-        emcmake cmake -DCMAKE_BUILD_TYPE=Release -f ../CMakeLists.emscripten.txt ..
+        # Copy Emscripten-specific CMakeLists.txt
+        cp ../CMakeLists.emscripten.txt ../CMakeLists.txt
+        emcmake cmake -DCMAKE_BUILD_TYPE=Release ..
         
     - name: Build FastTracker II Clone
       working-directory: build_emscripten
