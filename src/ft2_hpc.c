@@ -27,7 +27,7 @@
 
 #define FRAC_BITS 63 /* leaves one bit for frac overflow test */
 #define FRAC_SCALE (1ULL << FRAC_BITS)
-#define FRAC_MASK (FRAC_SCALE-1)
+#define FRAC_MASK (FRAC_SCALE - 1)
 
 hpcFreq_t hpcFreq;
 
@@ -37,9 +37,9 @@ hpcFreq_t hpcFreq;
 
 static bool canAdjustTimerResolution;
 
-static NTSTATUS (__stdcall *NtDelayExecution)(BOOL Alertable, PLARGE_INTEGER DelayInterval);
-static NTSTATUS (__stdcall *NtQueryTimerResolution)(PULONG MinimumResolution, PULONG MaximumResolution, PULONG ActualResolution);
-static NTSTATUS (__stdcall *NtSetTimerResolution)(ULONG DesiredResolution, BOOLEAN SetResolution, PULONG CurrentResolution);
+static NTSTATUS(__stdcall *NtDelayExecution)(BOOL Alertable, PLARGE_INTEGER DelayInterval);
+static NTSTATUS(__stdcall *NtQueryTimerResolution)(PULONG MinimumResolution, PULONG MaximumResolution, PULONG ActualResolution);
+static NTSTATUS(__stdcall *NtSetTimerResolution)(ULONG DesiredResolution, BOOLEAN SetResolution, PULONG CurrentResolution);
 
 static void (*usleep)(int32_t usec);
 
@@ -62,11 +62,11 @@ static void usleepPoor(int32_t usec) // fallback if no NtDelayExecution()
 
 static void windowsSetupUsleep(void)
 {
-	NtDelayExecution = (NTSTATUS (__stdcall *)(BOOL, PLARGE_INTEGER))GetProcAddress(GetModuleHandle("ntdll.dll"), "NtDelayExecution");
+	NtDelayExecution = (NTSTATUS(__stdcall *)(BOOL, PLARGE_INTEGER))GetProcAddress(GetModuleHandle("ntdll.dll"), "NtDelayExecution");
 	usleep = (NtDelayExecution != NULL) ? usleepAcceptable : usleepPoor;
 
-	NtQueryTimerResolution = (NTSTATUS (__stdcall *)(PULONG, PULONG, PULONG))GetProcAddress(GetModuleHandle("ntdll.dll"), "NtQueryTimerResolution");
-	NtSetTimerResolution = (NTSTATUS (__stdcall *)(ULONG, BOOLEAN, PULONG))GetProcAddress(GetModuleHandle("ntdll.dll"), "NtSetTimerResolution");
+	NtQueryTimerResolution = (NTSTATUS(__stdcall *)(PULONG, PULONG, PULONG))GetProcAddress(GetModuleHandle("ntdll.dll"), "NtQueryTimerResolution");
+	NtSetTimerResolution = (NTSTATUS(__stdcall *)(ULONG, BOOLEAN, PULONG))GetProcAddress(GetModuleHandle("ntdll.dll"), "NtSetTimerResolution");
 	canAdjustTimerResolution = (NtQueryTimerResolution != NULL && NtSetTimerResolution != NULL);
 }
 #endif
@@ -95,7 +95,7 @@ static uint64_t getFrac64FromU64DivU32(uint64_t dividend, uint32_t divisor)
 	if (dividend == 0)
 		return 0;
 
-	const uint32_t quotient  = (uint32_t)((dividend << 32) / divisor);
+	const uint32_t quotient = (uint32_t)((dividend << 32) / divisor);
 	const uint32_t remainder = (uint32_t)((dividend << 32) % divisor);
 
 	const uint32_t resultHi = quotient;
@@ -114,7 +114,7 @@ void hpc_SetDurationInHz(hpc_t *hpc, double dHz) // dHz = max 4095.999inf Hz (0.
 	*/
 #define INPUT_FRAC_BITS 20
 #define INPUT_FRAC_SCALE (1UL << INPUT_FRAC_BITS)
-#define INPUT_INT_MAX ((1UL << (BITS_IN_UINT32-INPUT_FRAC_BITS))-1)
+#define INPUT_INT_MAX ((1UL << (BITS_IN_UINT32 - INPUT_FRAC_BITS)) - 1)
 
 	if (dHz > INPUT_INT_MAX)
 		dHz = INPUT_INT_MAX;

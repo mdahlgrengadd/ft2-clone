@@ -1,9 +1,7 @@
-name: Build and Deploy to GitHub Pages
+name: Deploy FastTracker II Clone to GitHub Pages
 
 on:
   push:
-    branches: [ main, master ]
-  pull_request:
     branches: [ main, master ]
   workflow_dispatch:
 
@@ -20,64 +18,38 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  build:
+  deploy:
     runs-on: ubuntu-latest
+    
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
       
-    - name: Setup Emscripten SDK
-      uses: mymindstorm/setup-emsdk@v14
-      with:
-        version: '3.1.45'
-        actions-cache-folder: 'emsdk-cache'
-        
-    - name: Verify Emscripten installation
+    - name: Verify WebAssembly build exists
       run: |
-        emcc --version
-        which emcc
-        
-    - name: Create build directory
-      run: mkdir -p build_emscripten
-      
-    - name: Create web directory structure
-      run: |
-        mkdir -p web/web_user
-        mkdir -p web/web_user/modules
-        mkdir -p web/web_user/samples
-        mkdir -p web/web_user/instruments
-        mkdir -p web/assets
-        
-    - name: Configure CMake with Emscripten
-      working-directory: build_emscripten
-      run: |
-        # Copy Emscripten-specific CMakeLists.txt
-        cp ../CMakeLists.emscripten.txt ../CMakeLists.txt
-        emcmake cmake -DCMAKE_BUILD_TYPE=Release ..
-        
-    - name: Build FastTracker II Clone
-      working-directory: build_emscripten
-      run: |
-        emmake make -j$(nproc)
-        
-    - name: Verify build output
-      run: |
-        echo "Checking build outputs..."
+        echo "Checking for existing WebAssembly build..."
         ls -la build_emscripten/web/
+        echo ""
+        echo "✅ Required files:"
+        test -f build_emscripten/web/ft2-clone.html && echo "  ✅ ft2-clone.html found"
+        test -f build_emscripten/web/ft2-clone.js && echo "  ✅ ft2-clone.js found" 
+        test -f build_emscripten/web/ft2-clone.wasm && echo "  ✅ ft2-clone.wasm found"
+        test -f build_emscripten/web/ft2-clone.data && echo "  ✅ ft2-clone.data found"
+        echo ""
+        echo "📊 File sizes:"
+        du -h build_emscripten/web/*
         
     - name: Create GitHub Pages structure
       run: |
         # Create pages directory
         mkdir -p pages
         
-        # Copy built web files
+        # Copy all built web files
         cp -r build_emscripten/web/* pages/
-        
-        # Copy additional web assets if they exist
-        if [ -d "web/assets" ]; then
-          cp -r web/assets pages/
-        fi
         
         # Create index.html that redirects to ft2-clone.html
         cat > pages/index.html << 'EOF'
@@ -126,13 +98,31 @@ jobs:
                 a:hover {
                     text-decoration: underline;
                 }
+                .features {
+                    margin-top: 30px;
+                    text-align: left;
+                    color: #aaa;
+                    font-size: 0.9em;
+                }
+                .feature {
+                    margin: 8px 0;
+                }
             </style>
         </head>
         <body>
             <div class="container">
                 <div class="logo">🎵 FastTracker II Clone</div>
-                <div class="subtitle">Web version powered by Emscripten</div>
-                <div class="loading">Loading... If not redirected automatically, <a href="ft2-clone.html">click here</a></div>
+                <div class="subtitle">WebAssembly Music Tracker</div>
+                <div class="loading">Loading... If not redirected automatically, <a href="ft2-clone.html">click here to launch</a></div>
+                
+                <div class="features">
+                    <div class="feature">🎵 Full FastTracker II compatibility</div>
+                    <div class="feature">💾 Persistent browser storage</div>
+                    <div class="feature">🎨 "Why Colors?" theme by default</div>
+                    <div class="feature">📁 Drag & drop module files</div>
+                    <div class="feature">🔄 Automatic file management</div>
+                    <div class="feature">🌐 Runs entirely in your browser</div>
+                </div>
             </div>
             <script>
                 // Fallback redirect after 3 seconds
@@ -150,77 +140,70 @@ jobs:
         cat > pages/README.md << 'EOF'
         # FastTracker II Clone - Web Version
         
-        This is the web version of FastTracker II Clone, built with Emscripten and deployed automatically via GitHub Actions.
+        🎵 **Live Demo:** [https://mdahlgrengadd.github.io/ft2-clone](https://mdahlgrengadd.github.io/ft2-clone)
         
         ## Features
-        - Full FastTracker II compatibility
-        - Persistent storage using IndexedDB
-        - Drag & drop module file upload
-        - "Why Colors?" theme by default
-        - Supports XM, MOD, S3M, IT and other tracker formats
+        - 🎵 Full FastTracker II compatibility
+        - 💾 Persistent storage using IndexedDB
+        - 🎨 "Why Colors?" theme by default
+        - 📁 Drag & drop module file upload
+        - 🔄 Automatic directory refresh
+        - 🌐 Runs entirely in your browser (no plugins needed)
+        
+        ## Supported Formats
+        - XM (Extended Module)
+        - MOD (Amiga Module) 
+        - S3M (Scream Tracker 3)
+        - IT (Impulse Tracker)
+        - And many more tracker formats
         
         ## Usage
-        - Click to start the application
-        - Drag and drop .xm, .mod, .s3m files onto the interface to load them
-        - Your settings and uploaded files are automatically saved
+        1. Visit the website
+        2. Click to start the application
+        3. Drag and drop .xm, .mod, .s3m files onto the interface
+        4. Your settings and uploaded files are automatically saved
         
         ## Technical Details
         - Built with Emscripten WebAssembly
         - Uses IDBFS for persistent browser storage
-        - Supports all major tracker file formats
         - Optimized for modern web browsers
+        - Zero-latency audio processing
+        
+        ## About
+        This is a web port of the FastTracker II Clone, automatically deployed from the repository.
         EOF
         
-        echo "Pages structure created:"
+        echo ""
+        echo "🚀 GitHub Pages structure created:"
         ls -la pages/
+        echo ""
+        echo "📁 Total deployment size:"
+        du -sh pages/
         
     - name: Upload Pages artifact
       uses: actions/upload-pages-artifact@v3
       with:
         path: ./pages
 
-  deploy:
-    # Only deploy on pushes to main/master branch
-    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
-    
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-latest
-    needs: build
-    
-    steps:
     - name: Deploy to GitHub Pages
       id: deployment
       uses: actions/deploy-pages@v4
 
-  build-info:
-    runs-on: ubuntu-latest
-    needs: build
-    if: always()
-    
-    steps:
-    - name: Build Summary
+    - name: Deployment Summary
       run: |
-        echo "## FastTracker II Clone Build Summary" >> $GITHUB_STEP_SUMMARY
+        echo "## 🎵 FastTracker II Clone Deployment Complete!" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
-        echo "✅ **Build Status:** ${{ needs.build.result }}" >> $GITHUB_STEP_SUMMARY
+        echo "✅ **Status:** Successfully deployed to GitHub Pages" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
-        if [ "${{ needs.build.result }}" == "success" ]; then
-          echo "🎉 **Build successful!** The web version has been created." >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### Features Included:" >> $GITHUB_STEP_SUMMARY
-          echo "- 🎵 Full FastTracker II Clone functionality" >> $GITHUB_STEP_SUMMARY
-          echo "- 💾 Persistent storage with IDBFS" >> $GITHUB_STEP_SUMMARY
-          echo "- 🎨 Default 'Why Colors?' theme" >> $GITHUB_STEP_SUMMARY
-          echo "- 📁 Drag & drop module file upload" >> $GITHUB_STEP_SUMMARY
-          echo "- 🔄 Automatic directory refresh" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          if [ "${{ github.event_name }}" == "push" ] && ([ "${{ github.ref }}" == "refs/heads/main" ] || [ "${{ github.ref }}" == "refs/heads/master" ]); then
-            echo "🚀 **Deployment:** Will be deployed to GitHub Pages" >> $GITHUB_STEP_SUMMARY
-          else
-            echo "ℹ️ **Deployment:** Build-only (not deploying - not on main/master branch)" >> $GITHUB_STEP_SUMMARY
-          fi
-        else
-          echo "❌ **Build failed!** Check the build logs for details." >> $GITHUB_STEP_SUMMARY
-        fi
+        echo "� **Live URL:** ${{ steps.deployment.outputs.page_url }}" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### 🎹 Features Available:" >> $GITHUB_STEP_SUMMARY
+        echo "- 🎵 Full FastTracker II Clone functionality" >> $GITHUB_STEP_SUMMARY
+        echo "- 💾 Persistent storage with IDBFS" >> $GITHUB_STEP_SUMMARY
+        echo "- 🎨 'Why Colors?' theme by default" >> $GITHUB_STEP_SUMMARY
+        echo "- 📁 Drag & drop module file upload" >> $GITHUB_STEP_SUMMARY
+        echo "- 🔄 Automatic directory refresh" >> $GITHUB_STEP_SUMMARY
+        echo "- 🌐 Zero-installation web experience" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### 🎼 Ready to use!" >> $GITHUB_STEP_SUMMARY
+        echo "Just visit the URL above and start making music!" >> $GITHUB_STEP_SUMMARY

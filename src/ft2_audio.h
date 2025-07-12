@@ -26,11 +26,11 @@ enum
 
 #define BPM_FRAC_BITS 52
 #define BPM_FRAC_SCALE (1ULL << BPM_FRAC_BITS)
-#define BPM_FRAC_MASK (BPM_FRAC_SCALE-1)
+#define BPM_FRAC_MASK (BPM_FRAC_SCALE - 1)
 
 #define TICK_TIME_FRAC_BITS 52
 #define TICK_TIME_FRAC_SCALE (1ULL << TICK_TIME_FRAC_BITS)
-#define TICK_TIME_FRAC_MASK (TICK_TIME_FRAC_SCALE-1)
+#define TICK_TIME_FRAC_MASK (TICK_TIME_FRAC_SCALE - 1)
 
 // for audio/video sync queue. (2^n-1 - don't change this! Queue buffer is already BIG in size)
 #define SYNC_QUEUE_LEN 4095
@@ -45,11 +45,11 @@ typedef struct audio_t
 	int32_t inputDeviceNum, outputDeviceNum, lastWorkingAudioFreq, lastWorkingAudioBits;
 	uint32_t quickVolRampSamples, freq;
 
-	uint32_t tickSampleCounter, samplesPerTickInt, samplesPerTickIntTab[(MAX_BPM-MIN_BPM)+1];
-	uint64_t tickSampleCounterFrac, samplesPerTickFrac, samplesPerTickFracTab[(MAX_BPM-MIN_BPM)+1];
+	uint32_t tickSampleCounter, samplesPerTickInt, samplesPerTickIntTab[(MAX_BPM - MIN_BPM) + 1];
+	uint64_t tickSampleCounterFrac, samplesPerTickFrac, samplesPerTickFracTab[(MAX_BPM - MIN_BPM) + 1];
 
-	uint32_t audLatencyPerfValInt, tickTimeIntTab[(MAX_BPM-MIN_BPM)+1];
-	uint64_t audLatencyPerfValFrac, tickTimeFracTab[(MAX_BPM-MIN_BPM)+1];
+	uint32_t audLatencyPerfValInt, tickTimeIntTab[(MAX_BPM - MIN_BPM) + 1];
+	uint64_t audLatencyPerfValFrac, tickTimeFracTab[(MAX_BPM - MIN_BPM) + 1];
 
 	uint64_t tickTime64, tickTime64Frac;
 
@@ -88,7 +88,7 @@ typedef struct pattSyncData_t // used for audio/video sync queue (pack to save R
 	uint64_t timestamp;
 }
 #ifdef __GNUC__
-__attribute__ ((packed))
+__attribute__((packed))
 #endif
 pattSyncData_t;
 #ifdef _MSC_VER
@@ -98,7 +98,7 @@ pattSyncData_t;
 typedef struct pattSync_t
 {
 	volatile int32_t readPos, writePos;
-	pattSyncData_t data[SYNC_QUEUE_LEN+1];
+	pattSyncData_t data[SYNC_QUEUE_LEN + 1];
 } pattSync_t;
 
 typedef struct chSyncData_t
@@ -110,7 +110,7 @@ typedef struct chSyncData_t
 typedef struct chSync_t
 {
 	volatile int32_t readPos, writePos;
-	chSyncData_t data[SYNC_QUEUE_LEN+1];
+	chSyncData_t data[SYNC_QUEUE_LEN + 1];
 } chSync_t;
 
 int32_t pattQueueReadSize(void);
