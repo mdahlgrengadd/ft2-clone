@@ -54,8 +54,9 @@ target_compile_options(ft2-clone PRIVATE
     -Wall
     -Wno-unused-result
     -Wno-missing-field-initializers
-    -Wno-stringop-overflow
+    -Wno-shift-overflow
     -Wno-strict-aliasing
+    -sUSE_SDL=2
 )
 
 # Emscripten-specific settings
@@ -66,17 +67,22 @@ set(EMSCRIPTEN_LINK_FLAGS
     -sSTACK_SIZE=1048576
     -sASYNCIFY=1
     -sASYNCIFY_STACK_SIZE=65536
-    -sEXPORTED_RUNTIME_METHODS=["ccall","cwrap","FS"]
-    -sEXPORTED_FUNCTIONS=["_main","_malloc","_free","_refreshModuleDirectory"]
+    -sEXPORTED_RUNTIME_METHODS=ccall,cwrap,FS
+    -sEXPORTED_FUNCTIONS=_main,_malloc,_free,_refreshModuleDirectory
     -sFORCE_FILESYSTEM=1
-    -sLLD_REPORT_UNDEFINED=1
-    -sERROR_ON_UNDEFINED_SYMBOLS=1
     -lidbfs.js
     --embed-file "${CMAKE_CURRENT_SOURCE_DIR}/src/gfxdata/bmp@/"
     --shell-file "${CMAKE_CURRENT_SOURCE_DIR}/web/shell.html"
-    --preload-file "${CMAKE_CURRENT_SOURCE_DIR}/web/assets@/assets"
-    --preload-file "${CMAKE_CURRENT_SOURCE_DIR}/web/web_user@/home/web_user"
 )
+
+# Add conditional preload files if they exist
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/web/assets")
+    list(APPEND EMSCRIPTEN_LINK_FLAGS "--preload-file" "${CMAKE_CURRENT_SOURCE_DIR}/web/assets@/assets")
+endif()
+
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/web/web_user")
+    list(APPEND EMSCRIPTEN_LINK_FLAGS "--preload-file" "${CMAKE_CURRENT_SOURCE_DIR}/web/web_user@/home/web_user")
+endif()
 
 # Convert list to string for linker
 string(REPLACE ";" " " EMSCRIPTEN_LINK_FLAGS "${EMSCRIPTEN_LINK_FLAGS}")
