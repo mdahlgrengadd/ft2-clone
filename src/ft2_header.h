@@ -34,8 +34,8 @@
 ** branchless in the inner channel mixer loop.
 ** Warning: Do not change this!
 */
-#define SMP_DAT_OFFSET ((MAX_LEFT_TAPS*2)+1)
-#define SAMPLE_PAD_LENGTH (SMP_DAT_OFFSET+(MAX_RIGHT_TAPS*2))
+#define SMP_DAT_OFFSET ((MAX_LEFT_TAPS * 2) + 1)
+#define SAMPLE_PAD_LENGTH (SMP_DAT_OFFSET + (MAX_RIGHT_TAPS * 2))
 
 #ifndef _WIN32
 #define _stricmp strcasecmp
@@ -56,45 +56,50 @@
 #define MAX(a, b) (((a) > (b)) ? (a) : (b))
 #define CLAMP(x, low, high) (((x) > (high)) ? (high) : (((x) < (low)) ? (low) : (x)))
 
-#define DROUND(x) \
-	     if (x < 0.0) x -= 0.5; \
-	else if (x > 0.0) x += 0.5
+#define DROUND(x)     \
+	if (x < 0.0)      \
+		x -= 0.5;     \
+	else if (x > 0.0) \
+	x += 0.5
 
-#define FROUND(x) \
-	     if (x < 0.0f) x -= 0.5f; \
-	else if (x > 0.0f) x += 0.5f
+#define FROUND(x)      \
+	if (x < 0.0f)      \
+		x -= 0.5f;     \
+	else if (x > 0.0f) \
+	x += 0.5f
 
 // fast 32-bit -> 8-bit clamp
-#define CLAMP8(i) if ((int8_t)(i) != i) i = 0x7F ^ (i >> 31)
+#define CLAMP8(i)         \
+	if ((int8_t)(i) != i) \
+	i = 0x7F ^ (i >> 31)
 
 // fast 32-bit -> 16-bit clamp
-#define CLAMP16(i) if ((int16_t)(i) != i) i = 0x7FFF ^ (i >> 31)
+#define CLAMP16(i)         \
+	if ((int16_t)(i) != i) \
+	i = 0x7FFF ^ (i >> 31)
 
-#define SWAP16(x) \
-( \
-	(((uint16_t)((x) & 0x00FF)) << 8) | \
-	(((uint16_t)((x) & 0xFF00)) >> 8)   \
-)
+#define SWAP16(x)                           \
+	(                                       \
+		(((uint16_t)((x) & 0x00FF)) << 8) | \
+		(((uint16_t)((x) & 0xFF00)) >> 8))
 
-#define SWAP32(x) \
-( \
-	(((uint32_t)((x) & 0x000000FF)) << 24) | \
-	(((uint32_t)((x) & 0x0000FF00)) <<  8) | \
-	(((uint32_t)((x) & 0x00FF0000)) >>  8) | \
-	(((uint32_t)((x) & 0xFF000000)) >> 24)   \
-)
+#define SWAP32(x)                                \
+	(                                            \
+		(((uint32_t)((x) & 0x000000FF)) << 24) | \
+		(((uint32_t)((x) & 0x0000FF00)) << 8) |  \
+		(((uint32_t)((x) & 0x00FF0000)) >> 8) |  \
+		(((uint32_t)((x) & 0xFF000000)) >> 24))
 
-#define SWAP64(x) \
-( \
-	(((x) << 56) & 0xFF00000000000000ULL) | \
-	(((x) << 40) & 0x00FF000000000000ULL) | \
-	(((x) << 24) & 0x0000FF0000000000ULL) | \
-	(((x) <<  8) & 0x000000FF00000000ULL) | \
-	(((x) >>  8) & 0x00000000FF000000ULL) | \
-	(((x) >> 24) & 0x0000000000FF0000ULL) | \
-	(((x) >> 40) & 0x000000000000FF00ULL) | \
-	(((x) >> 56) & 0x00000000000000FFULL)  \
-)
+#define SWAP64(x)                               \
+	(                                           \
+		(((x) << 56) & 0xFF00000000000000ULL) | \
+		(((x) << 40) & 0x00FF000000000000ULL) | \
+		(((x) << 24) & 0x0000FF0000000000ULL) | \
+		(((x) << 8) & 0x000000FF00000000ULL) |  \
+		(((x) >> 8) & 0x00000000FF000000ULL) |  \
+		(((x) >> 24) & 0x0000000000FF0000ULL) | \
+		(((x) >> 40) & 0x000000000000FF00ULL) | \
+		(((x) >> 56) & 0x00000000000000FFULL))
 
 typedef struct smpPtr_t
 {

@@ -63,74 +63,34 @@ jobs:
             <style>
                 body {
                     margin: 0;
-                    padding: 20px;
-                    font-family: Arial, sans-serif;
+                    padding: 0;
                     background: #000;
                     color: #fff;
+                    font-family: Arial, sans-serif;
                     display: flex;
-                    flex-direction: column;
                     align-items: center;
                     justify-content: center;
                     min-height: 100vh;
-                }
-                .container {
                     text-align: center;
-                    max-width: 600px;
-                }
-                .logo {
-                    font-size: 2.5em;
-                    margin-bottom: 20px;
-                    color: #4CAF50;
-                }
-                .subtitle {
-                    font-size: 1.2em;
-                    margin-bottom: 30px;
-                    color: #ccc;
-                }
-                .loading {
-                    font-size: 1em;
-                    color: #888;
                 }
                 a {
-                    color: #4CAF50;
-                    text-decoration: none;
-                }
-                a:hover {
+                    color: #fff;
                     text-decoration: underline;
                 }
-                .features {
-                    margin-top: 30px;
-                    text-align: left;
-                    color: #aaa;
-                    font-size: 0.9em;
-                }
-                .feature {
-                    margin: 8px 0;
+                a:hover {
+                    color: #ccc;
                 }
             </style>
         </head>
         <body>
-            <div class="container">
-                <div class="logo">🎵 FastTracker II Clone</div>
-                <div class="subtitle">WebAssembly Music Tracker</div>
-                <div class="loading">Loading... If not redirected automatically, <a href="ft2-clone.html">click here to launch</a></div>
-                
-                <div class="features">
-                    <div class="feature">🎵 Full FastTracker II compatibility</div>
-                    <div class="feature">💾 Persistent browser storage</div>
-                    <div class="feature">🎨 "Why Colors?" theme by default</div>
-                    <div class="feature">📁 Drag & drop module files</div>
-                    <div class="feature">🔄 Automatic file management</div>
-                    <div class="feature">🌐 Runs entirely in your browser</div>
-                </div>
-            </div>
+            Loading FastTracker II... <a href="ft2-clone.html">click here if not redirected automatically</a>
             <script>
-                // Fallback redirect after 3 seconds
+                // Redirect after 1 second
                 setTimeout(function() {
                     if (window.location.pathname.endsWith('index.html') || window.location.pathname.endsWith('/')) {
                         window.location.href = 'ft2-clone.html';
                     }
-                }, 3000);
+                }, 1000);
             </script>
         </body>
         </html>
@@ -140,7 +100,7 @@ jobs:
         cat > pages/README.md << 'EOF'
         # FastTracker II Clone - Web Version
         
-        🎵 **Live Demo:** [https://mdahlgrengadd.github.io/ft2-clone](https://mdahlgrengadd.github.io/ft2-clone)
+        🎵 **Live Demo:** [https://mdahlgrengadd.github.io/ft2-clone-emscripten](https://mdahlgrengadd.github.io/ft2-clone-emscripten)
         
         ## Features
         - 🎵 Full FastTracker II compatibility
