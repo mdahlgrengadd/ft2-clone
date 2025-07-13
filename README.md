@@ -1,6 +1,6 @@
 # ft2-clone-emscripten
 Fasttracker II clone for Windows/macOS/Linux/Web
-[Online demo](https://mdahlgrengadd.github.io/ft2-clone/ft2-clone.html)
+[Online demo](https://mdahlgrengadd.github.io/ft2-clone-emscripten)
 
 Aims to be a highly accurate clone of the classic Fasttracker II software for MS-DOS. \
 The XM player itself has been directly ported from the original source code, for maximum accuracy. \
