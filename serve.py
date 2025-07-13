@@ -13,42 +13,25 @@ from pathlib import Path
 # Set up proper MIME types for WebAssembly
 class WebAssemblyHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
     def guess_type(self, path):
-        # Handle the return value properly - it can be a string or tuple
-        result = super().guess_type(path)
-        if isinstance(result, tuple):
-            mimetype, encoding = result
+        mimetype = super().guess_type(path)
+        if isinstance(mimetype, tuple):
+            mimetype, encoding = mimetype
         else:
-            mimetype = result
             encoding = None
         
-        # Add WebAssembly and other specific MIME types
+        # Add WebAssembly MIME type
         if path.endswith('.wasm'):
-            return 'application/wasm'
+            return 'application/wasm', encoding
         elif path.endswith('.data'):
-            return 'application/octet-stream'
-        elif path.endswith('.html') or path.endswith('.htm'):
-            return 'text/html'
-        elif path.endswith('.js'):
-            return 'application/javascript'
-        elif path.endswith('.css'):
-            return 'text/css'
+            return 'application/octet-stream', encoding
         
-        return mimetype
+        return mimetype, encoding
     
     def end_headers(self):
         # Add CORS headers for local development
         self.send_header('Cross-Origin-Embedder-Policy', 'require-corp')
         self.send_header('Cross-Origin-Opener-Policy', 'same-origin')
-        # Ensure UTF-8 encoding for HTML files
-        if hasattr(self, '_content_type') and self._content_type and 'html' in self._content_type:
-            self.send_header('Content-Type', 'text/html; charset=utf-8')
         super().end_headers()
-    
-    def send_header(self, keyword, value):
-        # Capture content type for later use
-        if keyword.lower() == 'content-type':
-            self._content_type = value
-        super().send_header(keyword, value)
 
 def main():
     # Default port
